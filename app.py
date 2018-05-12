@@ -5,6 +5,7 @@
 # MIT License
 
 import os
+from datetime import datetime
 
 from telegram.ext import Updater
 import feedparser as fp
@@ -21,6 +22,8 @@ class Aggregator:
     def __init__(self):
         self.bitcoin_news_rss = "http://bitcoin.worldnewsoffice.com/rss/category/1"
         self.altcoin_news_rss = "http://bitcoin.worldnewsoffice.com/rss/category/2"
+        # grapes emoji
+        self.grapes = emojize(':grapes:')
 
     def get_news(self):
         """
@@ -34,9 +37,24 @@ class Aggregator:
     def get_link(self, source):
         "Cleans source string to generate original link"
         if "=" in source:
+            print(source)
             return source.split("=")[1]
         else:
             return source
+
+    def _process_raw_news(self, raw_news, processed_news, news_format):
+        """
+        Processes template and loads in refined data
+        """
+        for news in raw_news:
+                processed_news.append(
+                    news_format.format(
+                        self.grapes,
+                        news.title,
+                        self.get_link(news.source.title),
+                    )
+                )
+
 
     def generate_message(self):
         """
@@ -45,30 +63,14 @@ class Aggregator:
         news_group = self.get_news()
         bitcoin_news = news_group[0]
         altcoin_news = news_group[1]
-        # grapes emoji
-        grapes = emojize(':grapes:')
+        
 
-        news_item = "{} *{}* - [Read more >>]({})\n"
+        news_item = "{} *{}* - [Read more >>]({}) \n\n"
         bitcoin_news_list = []
         altcoin_news_list = []
 
-        for news in bitcoin_news:
-            bitcoin_news_list.append(
-                news_item.format(
-                    grapes,
-                    news.title,
-                    self.get_link(news.source),
-                )
-            )
-
-        for news_item in altcoin_news:
-            bitcoin_news_list.append(
-                news_item.format(
-                    grapes,
-                    news_item.title,
-                    self.get_link(news_item.source),
-                )
-            )
+        self._process_raw_news(bitcoin_news, bitcoin_news_list, news_item)
+        self._process_raw_news(altcoin_news, altcoin_news_list, news_item)
 
         bitcoin_news_message = " ".join(bitcoin_news_list)
         altcoin_news_message = " ".join(altcoin_news_list)
@@ -81,7 +83,7 @@ class Aggregator:
         Returns markdown version of aggregated news
         ready for publishing
         """
-        heading = "*Latest news from the last 24hrs*\n"
+        heading = "_Latest news from the last 24hrs_"
         footer = "powered by @bitletter"
         news = self.generate_message()
 
@@ -89,7 +91,6 @@ class Aggregator:
 {}
 
 {}
-
 {}
 """.format(heading, news, footer)
         return news_md
@@ -109,12 +110,16 @@ def send_letter(bot, job):
     aggregator = Aggregator()
     news = aggregator.get_markdown()
     bot.send_message(
-        chat_id='@testayowachannel',
+        chat_id='@bitletter',
         parse_mode='Markdown',
+        disable_web_page_preview=True,
         text=news
     )
 
-job_minute = job_queue.run_repeating(send_letter, interval=20, first=5)
+job_minute = job_queue.run_daily(
+    send_letter,
+    time=datetime.today().time(),
+    )
 
-# if __name__ == '__main__':
-#     updater.start_polling()
+if __name__ == '__main__':
+     updater.start_polling()
