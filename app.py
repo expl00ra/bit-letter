@@ -5,12 +5,17 @@
 # MIT License
 
 import os
-from datetime import datetime
+from datetime import time
+import logging
 
 from telegram.ext import Updater
 
 from services.aggregator import Aggregator
 
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+    )
 
 updater = Updater(os.environ["ACCESS_TOKEN"])
 dipatcher = updater.dispatcher
@@ -34,7 +39,7 @@ def send_letter(bot, job):
 
 job_minute = job_queue.run_daily(
     send_letter,
-    time=datetime.time(6, 00),
+    time=time(6, 00),
     )
 
 if __name__ == '__main__':
