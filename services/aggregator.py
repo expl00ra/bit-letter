@@ -24,7 +24,7 @@ class Aggregator:
 
         return [bitcoin_news, altcoin_news]
 
-    def get_link(self, source):
+    def _get_link(self, source):
         "Cleans source string to generate original link"
         if "=" in source:
             print(source)
@@ -41,10 +41,9 @@ class Aggregator:
                     news_format.format(
                         self.grapes,
                         news.title,
-                        self.get_link(news.source.title),
+                        self._get_link(news.source.title),
                     )
                 )
-
 
     def generate_message(self):
         """
@@ -74,8 +73,9 @@ class Aggregator:
         ready for publishing
         """
         heading = "_Latest news from the last 24hrs_"
-        footer = "powered by @bitletter"
         news = self.generate_message()
+        footer = "powered by @bitletter"
+        
 
         news_md = """
 {}
